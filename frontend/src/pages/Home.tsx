@@ -123,7 +123,7 @@ export const Home: FC = () => {
 
         <div className="relative max-w-2xl mx-auto">
           <span className="inline-block text-brand text-xs font-semibold tracking-[0.2em] uppercase mb-6">
-            Est. in Hyderabad · Served by the Kilo
+            Ek Kilo Pyaar, Ek Kilo Swaad
           </span>
 
           <h1

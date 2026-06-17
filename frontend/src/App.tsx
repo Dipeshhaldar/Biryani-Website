@@ -27,7 +27,7 @@ function App() {
           </main>
           <footer className="bg-surface2 text-white py-6 mt-12 border-t border-white/10">
             <div className="max-w-7xl mx-auto px-4 text-center">
-              <p>&copy; 2024 Kilo Biryani. All rights reserved.</p>
+              <p>&copy; 2026 Kilo Biryani. All rights reserved.</p>
             </div>
           </footer>
         </div>
