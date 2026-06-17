@@ -169,9 +169,9 @@ biryani-website/
 - `PUT /api/orders/:id/status` - Update order status (Admin)
 - `POST /api/orders/:id/verify-payment` - Verify payment (Admin)
 
-### Admin
+<!-- ### Admin
 - `POST /api/admin/login` - Admin login
-- `GET /api/admin/dashboard` - Get dashboard data
+- `GET /api/admin/dashboard` - Get dashboard data -->
 
 ## 📱 Customer Flow
 
@@ -272,9 +272,9 @@ Default admin credentials (set these up in your MongoDB):
 
 This project is open source and available under the MIT License.
 
-## 📞 Support
+<!-- ## 📞 Support
 
-For support, email support@biryanistore.com or open an issue on GitHub.
+For support, email support@biryanistore.com or open an issue on GitHub. -->
 
 ---
 
