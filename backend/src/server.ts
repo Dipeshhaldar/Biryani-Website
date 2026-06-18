@@ -18,7 +18,13 @@ mongoose.connect(MONGODB_URI)
   .catch((error) => console.error('MongoDB connection error:', error));
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://biryani-website-theta.vercel.app',
+  ],
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
