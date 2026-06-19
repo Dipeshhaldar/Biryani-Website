@@ -56,12 +56,10 @@ export const AdminProducts: FC = () => {
     setMessage('Uploading image...');
 
     try {
-      // Step 1 — upload image to Cloudinary
       console.log('📤 Uploading:', imageFile.name);
       const uploadRes = await productService.uploadImage(imageFile);
       console.log('✅ Cloudinary URL:', uploadRes.url);
 
-      // Step 2 — save product with Cloudinary URL
       setMessage('Saving product...');
       await productService.create({
         name,
@@ -119,8 +117,6 @@ export const AdminProducts: FC = () => {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-
-            {/* Image upload */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-300 mb-2">Product Image</label>
               <div
@@ -150,7 +146,6 @@ export const AdminProducts: FC = () => {
               )}
             </div>
 
-            {/* Name */}
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -158,7 +153,6 @@ export const AdminProducts: FC = () => {
               placeholder="Product name"
             />
 
-            {/* Description */}
             <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -166,7 +160,6 @@ export const AdminProducts: FC = () => {
               placeholder="Description"
             />
 
-            {/* Prices */}
             <input
               type="number"
               value={pricePlate}
@@ -219,16 +212,17 @@ export const AdminProducts: FC = () => {
               {products.map((p) => (
                 <div
                   key={p._id}
-                  className="flex items-center justify-between border border-white/5 rounded-2xl p-4 hover:bg-white/5 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border border-white/5 rounded-2xl p-4 hover:bg-white/5 transition-colors"
                 >
-                  <div className="flex items-center gap-4">
+                  {/* Product info */}
+                  <div className="flex items-center gap-4 min-w-0">
                     <img
                       src={p.image}
                       alt={p.name}
-                      className="w-16 h-16 rounded-xl object-cover bg-white/5"
+                      className="w-16 h-16 rounded-xl object-cover bg-white/5 shrink-0"
                     />
-                    <div>
-                      <div className="font-semibold">{p.name}</div>
+                    <div className="min-w-0">
+                      <div className="font-semibold truncate">{p.name}</div>
                       <div className="text-sm text-gray-400 mt-0.5">
                         Plate: ₹{p.prices.plate || 0} &nbsp;·&nbsp;
                         1 KG: ₹{p.prices.kg || 0} &nbsp;·&nbsp;
@@ -236,9 +230,21 @@ export const AdminProducts: FC = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2 shrink-0">
-                    <Link to={`/admin/products/edit/${p._id}`} className="btn-secondary">Edit</Link>
-                    <button onClick={() => handleDelete(p._id)} className="btn-secondary">Delete</button>
+
+                  {/* Actions — full width row on mobile, inline on desktop */}
+                  <div className="flex gap-2 shrink-0 w-full sm:w-auto">
+                    <Link
+                      to={`/admin/products/edit/${p._id}`}
+                      className="btn-secondary flex-1 sm:flex-none text-center"
+                    >
+                      Edit
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(p._id)}
+                      className="btn-secondary flex-1 sm:flex-none"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               ))}
