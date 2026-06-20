@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { sendOrderNotification } from '../utils/mailer';
+import { sendOrderPushAlert } from '../utils/notify';
 import Order from '../models/Order';
 
 const router = Router();
@@ -13,6 +14,8 @@ router.post('/', async (req: Request, res: Response) => {
       orderNumber,
     });
     await order.save();
+
+    // Email notification (non-blocking)
     sendOrderNotification({
       orderNumber:          order.orderNumber,
       customerName:         order.customerName,
@@ -24,6 +27,16 @@ router.post('/', async (req: Request, res: Response) => {
       paymentTransactionId: order.paymentTransactionId,
       specialInstructions:  order.specialInstructions,
     });
+
+    // Push alert to owner's phone (non-blocking)
+    sendOrderPushAlert({
+      orderNumber:     order.orderNumber,
+      customerName:    order.customerName,
+      customerPhone:   order.customerPhone,
+      totalAmount:     order.totalAmount,
+      deliveryAddress: order.deliveryAddress,
+    });
+
     res.status(201).json(order);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create order' });
