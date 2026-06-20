@@ -7,7 +7,7 @@ import mongoose from 'mongoose';
 import productRoutes from './routes/productRoutes';
 import orderRoutes from './routes/orderRoutes';
 import adminRoutes from './routes/adminRoutes';
-
+import settingsRoutes from './routes/settingsRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -35,6 +35,7 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

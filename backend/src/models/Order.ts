@@ -5,6 +5,9 @@ export interface IOrder extends Document {
   customerName: string;
   customerPhone: string;
   deliveryAddress: string;
+  locationLat?: number;
+  locationLng?: number;
+  locationMapsUrl?: string;
   items: Array<{
     productId: string;
     name: string;
@@ -27,6 +30,9 @@ const orderSchema = new Schema<IOrder>(
     customerName: { type: String, required: true },
     customerPhone: { type: String, required: true },
     deliveryAddress: { type: String, required: true },
+    locationLat: { type: Number },
+    locationLng: { type: Number },
+    locationMapsUrl: { type: String },
     items: [
       {
         productId: String,

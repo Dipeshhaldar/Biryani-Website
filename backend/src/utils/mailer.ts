@@ -13,6 +13,7 @@ export const sendOrderNotification = async (order: {
   customerName: string;
   customerPhone: string;
   deliveryAddress: string;
+  locationMapsUrl?: string;
   items: any[];
   totalAmount: number;
   paymentTransactionId: string;
@@ -38,7 +39,7 @@ CUSTOMER DETAILS
 Name    : ${order.customerName}
 Phone   : ${order.customerPhone}
 Address : ${order.deliveryAddress}
-
+${order.locationMapsUrl ? `Live Location: ${order.locationMapsUrl}\n` : ''}
 ORDER ITEMS
 ${itemsList}
 
@@ -63,6 +64,11 @@ Please verify the payment and start preparing the order.
               <p style="margin:0 0 4px;font-size:15px;font-weight:600">${order.customerName}</p>
               <p style="margin:0 0 4px;font-size:13px;color:#B5A88A">📞 ${order.customerPhone}</p>
               <p style="margin:0;font-size:13px;color:#B5A88A">📍 ${order.deliveryAddress}</p>
+              ${order.locationMapsUrl ? `
+              <a href="${order.locationMapsUrl}" style="display:inline-block;margin-top:8px;font-size:13px;color:#E8972A;text-decoration:none">
+                🗺️ Open exact location on Google Maps →
+              </a>
+              ` : ''}
             </div>
 
             <div style="background:#1C1814;border-radius:10px;padding:16px;margin-bottom:16px">
@@ -101,7 +107,6 @@ Please verify the payment and start preparing the order.
 
     console.log(`✅ Order notification email sent for ${order.orderNumber}`);
   } catch (err) {
-    // Don't fail the order if email fails — just log it
     console.error('❌ Failed to send order notification email:', err);
   }
 };

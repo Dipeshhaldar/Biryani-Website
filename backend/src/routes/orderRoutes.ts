@@ -18,6 +18,7 @@ router.post('/', async (req: Request, res: Response) => {
       customerName:         order.customerName,
       customerPhone:        order.customerPhone,
       deliveryAddress:      order.deliveryAddress,
+      locationMapsUrl:      order.locationMapsUrl,
       items:                order.items,
       totalAmount:          order.totalAmount,
       paymentTransactionId: order.paymentTransactionId,

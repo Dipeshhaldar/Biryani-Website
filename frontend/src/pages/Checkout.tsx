@@ -2,7 +2,7 @@ import type { FC } from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { orderService } from '../services/api';
+import { orderService, settingsService } from '../services/api';
 
 const UPI_ID   = '8830845733@ybl';
 const UPI_NAME = 'Kilo Biryani';
@@ -15,8 +15,9 @@ const getQrUrl = (amount: number, orderId: string) => {
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLink)}`;
 };
 
-const generateOrderId = () =>
-  'KB' + Date.now().toString().slice(-6);
+const generateOrderId = () => 'KB' + Date.now().toString().slice(-6);
+
+type LocationStatus = 'idle' | 'loading' | 'success' | 'denied' | 'error';
 
 export const Checkout: FC = () => {
   const navigate = useNavigate();
@@ -27,16 +28,29 @@ export const Checkout: FC = () => {
     deliveryAddress: '',
     specialInstructions: '',
   });
-  const [transactionId, setTransactionId]   = useState('');
-  const [loading, setLoading]               = useState(false);
+  const [transactionId, setTransactionId]     = useState('');
+  const [loading, setLoading]                 = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [orderId] = useState(generateOrderId);
-  const [isMobile, setIsMobile]             = useState(false);
-  const [qrLoaded, setQrLoaded]             = useState(false);
+  const [isMobile, setIsMobile]               = useState(false);
+  const [qrLoaded, setQrLoaded]               = useState(false);
+  const [deliveryFee, setDeliveryFee]         = useState(0);
 
-  const totalAmount = getTotalAmount();
+  // Live location
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
-  // Detect mobile device
+  const itemsTotal  = getTotalAmount();
+  const totalAmount = itemsTotal + deliveryFee;
+
+  const mapsUrl = coords ? `https://www.google.com/maps?q=${coords.lat},${coords.lng}` : null;
+
+  useEffect(() => {
+    settingsService.get()
+      .then((settings) => setDeliveryFee(settings.deliveryFee))
+      .catch((err) => console.error('Failed to load delivery fee:', err));
+  }, []);
+
   useEffect(() => {
     setIsMobile(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
   }, []);
@@ -46,16 +60,43 @@ export const Checkout: FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const validateForm = () => {
-    if (!formData.customerName.trim()) {
-      alert('Please enter your name'); return false;
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationStatus('error');
+      return;
     }
+
+    setLocationStatus('loading');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCoords({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        setLocationStatus('success');
+      },
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationStatus('denied');
+        } else {
+          setLocationStatus('error');
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const clearLocation = () => {
+    setCoords(null);
+    setLocationStatus('idle');
+  };
+
+  const validateForm = () => {
+    if (!formData.customerName.trim()) { alert('Please enter your name'); return false; }
     if (!formData.customerPhone.trim() || formData.customerPhone.length < 10) {
       alert('Please enter a valid 10-digit mobile number'); return false;
     }
-    if (!formData.deliveryAddress.trim()) {
-      alert('Please enter your delivery address'); return false;
-    }
+    if (!formData.deliveryAddress.trim()) { alert('Please enter your delivery address'); return false; }
     return true;
   };
 
@@ -73,11 +114,16 @@ export const Checkout: FC = () => {
         customerName:        formData.customerName,
         customerPhone:       formData.customerPhone,
         deliveryAddress:     formData.deliveryAddress,
+        ...(coords && {
+          locationLat:     coords.lat,
+          locationLng:     coords.lng,
+          locationMapsUrl: mapsUrl!,
+        }),
         items,
         totalAmount,
         paymentTransactionId: transactionId,
         specialInstructions: formData.specialInstructions,
-      });
+      } as any);
       clearCart();
       navigate('/order-confirmation');
     } catch (error) {
@@ -110,7 +156,6 @@ export const Checkout: FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
 
-            {/* ── Step 1: Delivery Details ── */}
             {!showPaymentForm ? (
               <div className="rounded-3xl border border-white/10 bg-surface2 p-8 shadow-xl card-border">
                 <h2 className="text-2xl font-bold mb-6">Delivery Details</h2>
@@ -136,6 +181,68 @@ export const Checkout: FC = () => {
                       className="w-full rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-white"
                       placeholder="Your full delivery address" rows={3} />
                   </div>
+
+                  {/* Live Location */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Pin Your Exact Location <span className="text-gray-500 font-normal">(optional)</span>
+                    </label>
+
+                    {locationStatus === 'success' && coords ? (
+                      <div className="rounded-2xl border border-brand/30 bg-brand/5 px-4 py-3 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-brand text-lg shrink-0">📍</span>
+                          <div className="min-w-0">
+                            <p className="text-sm text-white font-medium">Location captured</p>
+                            <a
+                              href={mapsUrl!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-brand hover:text-brand-dark underline truncate block"
+                            >
+                              View on Google Maps
+                            </a>
+                          </div>
+                        </div>
+                        <button
+                          onClick={clearLocation}
+                          className="shrink-0 text-xs text-gray-400 hover:text-red-400 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleUseMyLocation}
+                        disabled={locationStatus === 'loading'}
+                        className="w-full rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-sm text-gray-300 hover:border-brand/40 hover:text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {locationStatus === 'loading' ? (
+                          <>📡 Getting your location...</>
+                        ) : (
+                          <>📍 Use My Current Location</>
+                        )}
+                      </button>
+                    )}
+
+                    {locationStatus === 'denied' && (
+                      <p className="text-xs text-amber-400 mt-2">
+                        Location permission denied. You can still place your order with the typed address above.
+                      </p>
+                    )}
+                    {locationStatus === 'error' && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Couldn't get your location. No worries — your typed address will be used.
+                      </p>
+                    )}
+                    {locationStatus === 'idle' && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Helps our delivery rider find you faster. Skip if you're ordering for another address.
+                      </p>
+                    )}
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Special Instructions (Optional)</label>
                     <textarea name="specialInstructions" value={formData.specialInstructions}
@@ -150,20 +257,17 @@ export const Checkout: FC = () => {
               </div>
 
             ) : (
-              /* ── Step 2: Payment ── */
               <div className="rounded-3xl border border-white/10 bg-surface2 p-8 shadow-xl card-border">
                 <h2 className="text-2xl font-bold mb-2">Payment</h2>
                 <p className="text-gray-400 text-sm mb-6">
                   Pay via UPI and enter the transaction ID to confirm your order.
                 </p>
 
-                {/* Amount banner */}
                 <div className="rounded-2xl bg-brand/10 border border-brand/20 px-5 py-4 mb-6 flex items-center justify-between">
                   <span className="text-gray-300 text-sm font-medium">Amount to Pay</span>
                   <span className="text-brand text-2xl font-bold">₹{totalAmount.toFixed(2)}</span>
                 </div>
 
-                {/* Mobile: Pay Now button */}
                 {isMobile && (
                   <a
                     href={getUpiLink(totalAmount, orderId)}
@@ -173,7 +277,6 @@ export const Checkout: FC = () => {
                   </a>
                 )}
 
-                {/* QR Code */}
                 <div className="flex flex-col items-center my-6">
                   <p className="text-sm text-gray-400 mb-4">
                     {isMobile
@@ -203,12 +306,10 @@ export const Checkout: FC = () => {
                   </div>
                 </div>
 
-                {/* UPI apps hint */}
                 <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 mb-6 text-center">
                   <p className="text-xs text-gray-400">Works with GPay · PhonePe · Paytm · BHIM · Any UPI app</p>
                 </div>
 
-                {/* Transaction ID */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     UPI Transaction ID <span className="text-red-400">*</span>
@@ -248,14 +349,28 @@ export const Checkout: FC = () => {
                 </div>
               ))}
             </div>
-            <div className="border-t border-white/10 pt-4">
-              <div className="flex justify-between font-bold text-lg text-white">
+
+            <div className="border-t border-white/10 pt-4 space-y-2">
+              <div className="flex justify-between text-sm text-gray-300">
+                <span>Subtotal</span>
+                <span>₹{itemsTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-300">
+                <span>Delivery Fee</span>
+                <span>{deliveryFee > 0 ? `₹${deliveryFee.toFixed(2)}` : 'Free'}</span>
+              </div>
+              <div className="flex justify-between font-bold text-lg text-white pt-2 border-t border-white/10">
                 <span>Total:</span>
                 <span className="text-brand">₹{totalAmount.toFixed(2)}</span>
               </div>
             </div>
 
-            {/* Order ID */}
+            {coords && (
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <p className="text-xs text-gray-500">📍 Live location attached</p>
+              </div>
+            )}
+
             <div className="mt-4 pt-4 border-t border-white/10">
               <p className="text-xs text-gray-500">Order Reference</p>
               <p className="text-sm font-mono text-gray-300 mt-0.5">{orderId}</p>

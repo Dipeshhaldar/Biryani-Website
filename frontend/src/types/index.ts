@@ -26,6 +26,9 @@ export interface Order {
   customerName: string;
   customerPhone: string;
   deliveryAddress: string;
+  locationLat?: number;
+  locationLng?: number;
+  locationMapsUrl?: string;
   items: CartItem[];
   totalAmount: number;
   paymentTransactionId: string;
@@ -49,4 +52,17 @@ export interface DashboardData {
   totalProducts: number;
   totalRevenue: number;
   recentOrders: Order[];
+}
+
+export interface Outlet {
+  name: string;
+  address: string;
+}
+
+export interface Settings {
+  _id: string;
+  deliveryFee: number;
+  ownerPhone: string;
+  outlets: Outlet[];
+  updatedAt: string;
 }

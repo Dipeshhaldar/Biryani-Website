@@ -1,9 +1,21 @@
 import type { FC } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
+import { settingsService } from '../services/api';
 import { Link } from 'react-router-dom';
 
 export const Cart: FC = () => {
   const { items, removeItem, updateQuantity, getTotalAmount, getTotalItems } = useCart();
+  const [deliveryFee, setDeliveryFee] = useState(0);
+
+  useEffect(() => {
+    settingsService.get()
+      .then((settings) => setDeliveryFee(settings.deliveryFee))
+      .catch((err) => console.error('Failed to load delivery fee:', err));
+  }, []);
+
+  const itemsTotal  = getTotalAmount();
+  const totalAmount = itemsTotal + deliveryFee;
 
   if (items.length === 0) {
     return (
@@ -100,7 +112,6 @@ export const Cart: FC = () => {
                   </div>
 
                   <div className="flex items-center justify-between gap-3">
-                    {/* Quantity stepper */}
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => updateQuantity(item.productId, item.type, Math.max(1, item.quantity - 1))}
@@ -117,7 +128,6 @@ export const Cart: FC = () => {
                       </button>
                     </div>
 
-                    {/* Price */}
                     <div className="text-right">
                       <p className="text-xs text-gray-500">₹{item.price} each</p>
                       <p className="text-brand font-bold text-base">₹{item.price * item.quantity}</p>
@@ -132,14 +142,22 @@ export const Cart: FC = () => {
           {/* Order Summary */}
           <div className="rounded-3xl border border-white/10 bg-surface2 p-6 shadow-xl h-fit card-border">
             <h2 className="text-xl font-bold mb-4">Order Summary</h2>
-            <div className="space-y-4 mb-6">
-              <div className="flex justify-between text-gray-300">
+            <div className="space-y-3 mb-4">
+              <div className="flex justify-between text-gray-300 text-sm">
                 <span>Total Items:</span>
                 <span className="font-semibold">{getTotalItems()}</span>
               </div>
+              <div className="flex justify-between text-gray-300 text-sm">
+                <span>Subtotal</span>
+                <span>₹{itemsTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-gray-300 text-sm">
+                <span>Delivery Fee</span>
+                <span>{deliveryFee > 0 ? `₹${deliveryFee.toFixed(2)}` : 'Free'}</span>
+              </div>
               <div className="border-t border-white/10 pt-4 flex justify-between text-lg font-bold text-white">
                 <span>Total Amount:</span>
-                <span className="text-brand">₹{getTotalAmount().toFixed(2)}</span>
+                <span className="text-brand">₹{totalAmount.toFixed(2)}</span>
               </div>
             </div>
             <Link to="/checkout" className="btn-primary block text-center">

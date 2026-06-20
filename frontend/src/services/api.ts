@@ -1,7 +1,6 @@
-import type { Product, Order, DashboardData } from '../types';
+import type { Product, Order, DashboardData, Settings } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-//const API_BASE_URL = 'http://localhost:5000/api';
 
 export const productService = {
   getAll: async (): Promise<Product[]> => {
@@ -10,15 +9,9 @@ export const productService = {
       throw new Error(`Failed to fetch products: ${response.status} ${response.statusText}`);
     }
     const payload = await response.json();
-    if (Array.isArray(payload)) {
-      return payload;
-    }
-    if (Array.isArray(payload.data)) {
-      return payload.data;
-    }
-    if (Array.isArray(payload.products)) {
-      return payload.products;
-    }
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload.data)) return payload.data;
+    if (Array.isArray(payload.products)) return payload.products;
     return [];
   },
 
@@ -28,12 +21,10 @@ export const productService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(product),
     });
-
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({ error: 'Failed to create product' }));
       throw new Error(errorBody.error || 'Failed to create product');
     }
-
     return response.json();
   },
 
@@ -55,7 +46,6 @@ export const productService = {
     const response = await fetch(`${API_BASE_URL}/products/${id}`);
     return response.json();
   },
-
 
   update: async (id: string, product: Partial<Product>): Promise<Product> => {
     const response = await fetch(`${API_BASE_URL}/products/${id}`, {
@@ -117,12 +107,10 @@ export const adminService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({ error: 'Login failed' }));
       throw new Error(errorBody.error || 'Invalid credentials');
     }
-
     return response.json();
   },
 
@@ -130,6 +118,29 @@ export const adminService = {
     const response = await fetch(`${API_BASE_URL}/admin/dashboard`);
     if (!response.ok) {
       throw new Error('Failed to fetch dashboard data');
+    }
+    return response.json();
+  },
+};
+
+export const settingsService = {
+  get: async (): Promise<Settings> => {
+    const response = await fetch(`${API_BASE_URL}/settings`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch settings');
+    }
+    return response.json();
+  },
+
+  update: async (deliveryFee: number): Promise<Settings> => {
+    const response = await fetch(`${API_BASE_URL}/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deliveryFee }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: 'Failed to update settings' }));
+      throw new Error(err.error || 'Failed to update settings');
     }
     return response.json();
   },

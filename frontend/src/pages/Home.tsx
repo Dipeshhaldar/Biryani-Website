@@ -128,7 +128,7 @@ export const Home: FC = () => {
 
           <h1
             style={displayFont}
-            className="font-bold text-5xl sm:text-6xl md:text-7xl leading-[1.07] text-[#F5EDD8] mb-5"
+            className="font-bold text-5xl sm:text-6xl md:text-7xl leading-[1.05] tracking-[-0.02em] text-[#F5EDD8] mb-5"
           >
             Biryani that<br />
             <em className="text-brand not-italic">hits different.</em>
